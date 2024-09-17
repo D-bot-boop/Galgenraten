@@ -6,53 +6,7 @@ import os
 import sys
 import math
 from openpyxl import Workbook, load_workbook
-"""
-def create_or_load_excel(filename):
-    try:
-        if os.path.exists(filename):
-            workbook = load_workbook(filename)
-            print(f"{filename} erfolgreich geladen.")
-        else:
-            workbook = Workbook()
-            sheet = workbook.active
-            sheet.title = "Buchstabenstatistik"
-            sheet.append(["Buchstabe", "Ausgewählt", "Im Wort enthalten", "Nicht im Wort enthalten"])
-            for letter in "abcdefghijklmnopqrstuvwxyzäöüß":
-                sheet.append([letter, 0, 0, 0])
-            workbook.save(filename)
-            print(f"{filename} erfolgreich erstellt und gespeichert.")
-    except Exception as e:
-        print(f"Fehler beim Erstellen oder Laden der Excel-Datei: {e}")
-    return workbook
 
-def update_letter_stats(workbook, letter, in_word):
-    try:
-        sheet = workbook["Buchstabenstatistik"]
-        for row in sheet.iter_rows(min_row=2, max_col=4):
-            if row[0].value == letter:
-                row[1].value += 1
-                if in_word:
-                    row[2].value += 1
-                else:
-                    row[3].value += 1
-                break
-        workbook.save(excel_file)
-    except Exception as e:
-        print(f"Fehler beim Aktualisieren der Buchstabenstatistik: {e}")
-
-def update_all_letter_stats(workbook, word, guessed_letters):
-    for letter in "abcdefghijklmnopqrstuvwxyzäöüß":
-        if letter in guessed_letters:
-            update_letter_stats(workbook, letter, letter in word.lower())
-        else:
-            update_letter_stats(workbook, letter, False)
-
-script_dir = os.path.dirname(os.path.abspath(__file__))
-excel_file = os.path.join(script_dir, "buchstabenstatistik.xlsx")
-
-
-workbook = create_or_load_excel(excel_file)
-"""
 def filter_words(filename):
     filtered_words = []
 
@@ -203,8 +157,10 @@ def choose_random_word():
     else:
         label.config(text="Keine Wörter mehr übrig")
 
+wrong_letters = []  # Neue Liste für falsch geratene Buchstaben
+
 def guess_letter(event=None):
-    global current_word, display_word, guessed_letters, mistake_count, mmr_points, game_over, mmr_change, winstreak, coins
+    global current_word, display_word, guessed_letters, mistake_count, mmr_points, game_over, mmr_change, winstreak, coins, wrong_letters
     
     if game_over:
         return
@@ -249,6 +205,10 @@ def guess_letter(event=None):
         result_label.config(text=f"Der Buchstabe '{user_input}' ist \n nicht im Wort enthalten.")
         mistake_count += 1
         
+        # Falsche Buchstaben speichern und anzeigen
+        wrong_letters.append(user_input)
+        wrong_letters_label.config(text=f"Falsche Buchstaben: {', '.join(wrong_letters)}")
+        
         letter_difficulty = calculate_letter_difficulty(user_input)
         change = max(1, 4 - letter_difficulty)
         mmr_points -= change
@@ -256,6 +216,7 @@ def guess_letter(event=None):
         mmr_change -= change
         
         #update_letter_stats(workbook, user_input, False)  # Buchstabe war nicht im Wort
+
 
     picture = f"{mistake_count}.png"
     show_image(picture)
@@ -673,9 +634,16 @@ reset_button.place(relx=1.0, rely=0.0, anchor="ne")
 label_rank =Label(game_frame, text="",fg='#f0f0f0', bg='#212121', font=('Helvetica', 15))
 label_rank.pack(pady=10)
 
-label_image = Label(game_frame, bg='#212121')
-label_image.pack(side=RIGHT, padx=10, pady=10)
+right_frame = Frame(game_frame, bg='#212121')
+right_frame.pack(side=RIGHT, padx=10, pady=10)
 
+# Label für das Bild
+label_image = Label(right_frame, bg='#212121')
+label_image.pack(pady=10)  # Nur pady für Abstand verwenden
+
+# Label für falsche Buchstaben unter dem Bild
+wrong_letters_label = Label(right_frame, text="Falsche Buchstaben: \n ")
+wrong_letters_label.pack(pady=(0, 10)) 
 label = Label(game_frame, text="Drücke den Knopf, um ein zufälliges Wort auszuwählen", wraplength=300,fg='#f0f0f0', bg='#212121', font=('Helvetica', 12))
 label.pack(pady=10)
 
